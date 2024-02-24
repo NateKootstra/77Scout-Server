@@ -1,2 +1,3 @@
 Server Name = Example Server Name
-Team Number = Example Team Number
+Team Number = ExampleTeamNumber
+ScouterUsernames = [ExampleScouter1, ExampleScouter2, ExampleScouter3]

@@ -1,5 +1,5 @@
 from flask import Flask, send_file, request
-from os import listdir, path
+import os
 import json
 
 server = Flask(__name__)
@@ -9,6 +9,7 @@ metadata = open("metadata.data", "r")
 metadata = metadata.read().splitlines()
 teamNumber = ""
 serverName = ""
+scouters = []
 
 removed = 0
 for i in range(len(metadata)):
@@ -20,22 +21,32 @@ for i in range(len(metadata)):
     if len(metadata[i - removed]) == 1:
         metadata.pop(i - removed)
         removed += 1
-    print(metadata[i - removed][0])
     if metadata[i - removed][0] == "Team Number":
         teamNumber = metadata[i - removed][1]
     if metadata[i - removed][0] == "Server Name":
         serverName = metadata[i - removed][1]
+    if metadata[i - removed][0] == "ScouterUsernames":
+        scouters = metadata[i - removed][1].lstrip("[").rstrip("]").split(",")
+
+for i in range(len(scouters)):
+    scouters[i] = scouters[i].strip(" ")
+    
+print(scouters)
+
+if not os.path.exists("matches"):
+    os.makedirs("matches")
+        
         
         
 @server.route("/name")
 def return_name():
     return serverName
 
-@server.route("/get/<team>")
-def return_data(team):
-    if team == teamNumber:
+@server.route("/get/<team>/<name>")
+def return_data(team, name):
+    if team == teamNumber and name in scouters:
         data = []
-        for match in listdir("matches"):
+        for match in os.listdir("matches"):
             f = open("matches/" + match, "r")
             data.append(f.read())
         return str(data)
@@ -43,13 +54,12 @@ def return_data(team):
         
     
 
-@server.route("/post/<team>", methods=['GET', 'POST'])
-def receive_data(team):
-    if team == teamNumber:
+@server.route("/post/<team>/<name>", methods=['GET', 'POST'])
+def receive_data(team, name):
+    if team == teamNumber and name in scouters:
         data = json.loads(request.data.decode())
-        
         for match in data:
-            if not path.exists("matches/" + match["name"] + ".json"):
+            if not os.path.exists("matches/" + match["name"] + ".json"):
                 with open("matches/" + match["name"] + ".json", "w") as f:
                     json.dump(match, f)
         return "OK"
